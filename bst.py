@@ -1,5 +1,8 @@
 import random
 import sys
+import ast
+from random import shuffle
+
 
 class MinBSTNode:
     def __init__(self, parent, val):
@@ -42,17 +45,61 @@ class MinBSTNode:
     def __str__(self):
         return '\n'.join(self._str()[0])
 
-    def IsLeftNode(self):
-        return (not self.left) and (not self.right)
+    # 将 val 插入到以 self 为根节点的子树
+    def Insert(self, val):
+        if val < self.val:
+            if self.left is None:
+                self.left = MinBSTNode(self, val)
+            else:
+                self.left.Insert(val)
+        else:
+            if self.right is None:
+                self.right = MinBSTNode(self, val)
+            else:
+                self.right.Insert(val)
+
+    # 将 val 从以 self 为根节点的子树中删除，返回以 self 为根节点的子树删除后的新子树
+    # 前提是 val 得存在
+    def Delete(self, val):
+        if self.val == val:
+            if self.left is None and self.right is None:
+                # case1：当前为叶子节点，删除自身
+                return None
+            elif self.left and self.right:
+                # case2: 有2个叶子结点，将 self 替换成右子树中最小的元素，然后从右子树中将其删除
+                self.val = self.right.FindMin()
+                self.right = self.right.Delete(self.val)
+                return self
+            else:
+                # case3: 只有一个叶子结点
+                return self.left if self.left else self.right
+        elif val < self.val:
+            self.left = self.left.Delete(val)
+            return self
+        else:
+            self.right = self.right.Delete(val)
+            return self
+
+    def FindMin(self):
+        cur = self
+        while (cur.left):
+            cur = cur.left
+        return cur.val
+
 
 class MinBST:
     root: MinBSTNode
+
     def __init__(self):
         self.root = None
+        self.len = 0
 
     def __str__(self):
         if self.root is None: return '<empty tree>'
         return str(self.root)
+
+    def __len__(self):
+        return self.len
 
     def min(self):
         if not self.root:
@@ -74,33 +121,32 @@ class MinBST:
     def find(self, val):
         cur = self.root
         while cur and cur.val != val:
-            if cur.val > root:
+            if cur.val > val:
                 cur = cur.left
             else:
                 cur = cur.right
         return cur
 
     def insert(self, val):
+        self.len += 1
         if not self.root:
-            self.root = MinBSTNode(None,val)
+            self.root = MinBSTNode(None, val)
             return
 
-        cur = self.root
-        while (val < cur.val and cur.left) or (val >= cur.val and cur.right):
-            cur = cur.left if val < cur.val else cur.right
-        if val < cur.val:
-            cur.left = MinBSTNode(cur, val)
-        else:
-            cur.right = MinBSTNode(cur, val)
+        self.root.Insert(val)
+        return
 
     def delete(self, val):
-        pass
+        ast.Assert(self.root)
+        self.len -= 1
+        self.root = self.root.Delete(val)
 
     def next_larger(self, val):
         pass
 
     def next_smaller(self, val):
         pass
+
 
 def test(args=None):
     if not args:
@@ -110,7 +156,7 @@ def test(args=None):
               sys.argv[0])
         sys.exit()
     elif len(args) == 1:
-        items = (random.randrange(100) for i in range(int(args[0])))
+        items = [random.randrange(100) for i in range(int(args[0]))]
     else:
         items = [int(i) for i in args]
 
@@ -120,6 +166,15 @@ def test(args=None):
         tree.insert(item)
         print()
         print(tree)
+
+    print("=======Delete=======")
+    del_items = random.sample(list(items),k=len(tree)//2)
+    for item in del_items:
+        tree.delete(item)
+        print("delete item ", item)
+        print(tree)
+        print()
+
 
 if __name__ == '__main__':
     test()
